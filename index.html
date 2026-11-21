@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Run Run Sahur</title>
+<link rel="preload" href="src/ui/fontes/fredoka-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face{font-family:"Fredoka";font-weight:700;src:url("src/ui/fontes/fredoka-latin-700-normal.woff2") format("woff2")}
+  @font-face{font-family:"Fredoka";font-weight:600;src:url("src/ui/fontes/fredoka-latin-600-normal.woff2") format("woff2")}
+  @font-face{font-family:"Fredoka";font-weight:700;src:url("src/ui/fontes/fredoka-latin-ext-700-normal.woff2") format("woff2");unicode-range:U+0100-024F,U+1E00-1EFF}
+  @font-face{font-family:"Fredoka";font-weight:600;src:url("src/ui/fontes/fredoka-latin-ext-600-normal.woff2") format("woff2");unicode-range:U+0100-024F,U+1E00-1EFF}
+  :root{--tinta:#2a2140;--acento:#ff7a1a;--acento2:#ffd23a;--sombra:#c9b8ec}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0d0f26;color:#fff;font-family:"Fredoka",system-ui,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:none}
+  canvas#tela{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  button{font-family:inherit}
+  .pilula{background:#fff;color:var(--tinta);border-radius:999px;padding:4px 16px;font-weight:700;box-shadow:0 4px 0 var(--sombra),0 6px 14px rgba(0,0,0,.25);display:inline-flex;align-items:center;gap:8px;line-height:1.15}
+  #hud{position:fixed;inset:0;pointer-events:none;padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))}
+  #hud[hidden]{display:none}
+  .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .esq{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+  .dir{display:flex;gap:8px;align-items:center}
+  #pontos{font-size:clamp(22px,4.2vw,34px);font-variant-numeric:tabular-nums}
+  .mult{font-size:18px;font-weight:700;color:var(--acento2);text-shadow:0 2px 0 rgba(0,0,0,.4);padding-left:10px}
+  .moedas{font-size:clamp(18px,3.4vw,26px);font-variant-numeric:tabular-nums}
+  .moeda{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3a0,#ffc531 45%,#c88a00);box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
+  .redondo{pointer-events:auto;width:44px;height:44px;border-radius:50%;border:0;background:#fff;color:var(--tinta);font-size:18px;font-weight:700;box-shadow:0 4px 0 var(--sombra);cursor:pointer;display:grid;place-items:center}
+  #perigo{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:rgba(20,10,30,.55);padding:4px 10px 4px 6px;border-radius:999px;opacity:0;transition:opacity .25s}
+  #perigo.on{opacity:1}
+  @media (max-width:560px){#perigo{top:calc(max(14px,env(safe-area-inset-top)) + 56px)}}
+  #perigo i{font-style:normal;font-size:20px}
+  #perigo .barra{width:min(26vw,120px);height:9px;border-radius:9px;background:rgba(255,255,255,.25);overflow:hidden}
+  #perigo .barra b{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd23a,#ff3a3a);border-radius:9px;transition:width .15s}
+  #poderes{position:fixed;left:max(12px,env(safe-area-inset-left));bottom:max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+  .poder{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.92);color:var(--tinta);border-radius:999px;padding:4px 12px 4px 6px;font-weight:700;font-size:15px;box-shadow:0 3px 0 var(--sombra)}
+  .poder i{font-style:normal;font-size:20px}
+  .poder .barra{width:90px;height:8px;border-radius:9px;background:#e6def7;overflow:hidden}
+  .poder .barra b{display:block;height:100%;background:var(--acento);border-radius:9px}
+  #dica{position:fixed;left:50%;top:22%;transform:translateX(-50%);font-size:clamp(20px,4vw,30px);font-weight:700;text-shadow:0 3px 0 rgba(0,0,0,.45);white-space:nowrap;opacity:0;transition:opacity .2s}
+  #dica.on{opacity:1}
+  #flutuantes{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .flut{position:absolute;transform:translate(-50%,-50%);font-weight:700;white-space:nowrap;animation:sobe .7s ease-out forwards;text-shadow:0 3px 0 rgba(0,0,0,.35)}
+  .flut.tung{font-size:clamp(30px,6vw,52px);color:var(--acento2);-webkit-text-stroke:2px #7a2e00;letter-spacing:1px}
+  .flut.poder{font-size:clamp(30px,6vw,56px);color:#fff;-webkit-text-stroke:2px var(--acento);animation-duration:1.1s}
+  .flut.ai{font-size:clamp(24px,4.5vw,40px);color:#fff;-webkit-text-stroke:2px #b8202a}
+  @keyframes sobe{0%{opacity:0;transform:translate(-50%,-30%) scale(.5) rotate(-6deg)}20%{opacity:1;transform:translate(-50%,-60%) scale(1.15) rotate(3deg)}100%{opacity:0;transform:translate(-50%,-140%) scale(1) rotate(0)}}
+  /* modo Sahur: borda arco-iris pulsando e clarao na entrada */
+  #estrela{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;box-shadow:inset 0 0 60px 14px #ff3af0;animation:arco 0.6s linear infinite}
+  #estrela.on{opacity:1}
+  #estrela.fim{animation:arco 0.6s linear infinite,pisca .25s steps(2) infinite}
+  @keyframes arco{0%{box-shadow:inset 0 0 60px 14px #ff3a3a}20%{box-shadow:inset 0 0 60px 14px #ffd23a}40%{box-shadow:inset 0 0 60px 14px #3aff7a}60%{box-shadow:inset 0 0 60px 14px #3ad2ff}80%{box-shadow:inset 0 0 60px 14px #b03aff}100%{box-shadow:inset 0 0 60px 14px #ff3a3a}}
+  @keyframes pisca{50%{opacity:.25}}
+  #clarao{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,.6) 40%,rgba(255,240,180,0) 75%);opacity:0}
+  #clarao.on{animation:clarao .6s ease-out}
+  @keyframes clarao{0%{opacity:1}100%{opacity:0}}
+  .tela{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
+  .tela[hidden]{display:none}
+  #inicio{justify-content:space-between;padding:max(26px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));pointer-events:none}
+  #inicio h1{margin:0;font-size:clamp(44px,9vw,92px);line-height:.9;color:#fff;-webkit-text-stroke:3px #5a2a00;text-shadow:0 6px 0 #5a2a00,0 10px 24px rgba(0,0,0,.4);transform:rotate(-3deg)}
+  #inicio h1 span{color:var(--acento2)}
+  #inicio .baixo{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+  .rotulo{font-size:15px;font-weight:600;opacity:.9;text-shadow:0 2px 0 rgba(0,0,0,.4)}
+  .mapas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;pointer-events:auto}
+  .mapa{pointer-events:auto;border:0;border-radius:18px;padding:9px 14px;min-width:min(42vw,190px);cursor:pointer;background:rgba(255,255,255,.88);color:var(--tinta);box-shadow:0 4px 0 var(--sombra);text-align:left;display:flex;flex-direction:column;gap:2px;font-weight:700;font-size:17px;outline:3px solid transparent}
+  .mapa small{font-size:12px;font-weight:600;opacity:.7}
+  .mapa .rec{font-size:13px;font-weight:600;color:#7a5a00}
+  .mapa.sel{background:#fff;outline-color:var(--acento);transform:translateY(-2px)}
+  .toque{font-size:clamp(22px,4.5vw,32px);font-weight:700;animation:pulsa 1.1s ease-in-out infinite;text-shadow:0 3px 0 rgba(0,0,0,.45)}
+  @keyframes pulsa{50%{transform:scale(1.08)}}
+  .teclas{font-size:14px;opacity:.85;text-shadow:0 1px 0 rgba(0,0,0,.5)}
+  .painel{background:#fff;color:var(--tinta);border-radius:28px;padding:22px 24px;min-width:min(340px,92vw);box-shadow:0 8px 0 var(--sombra),0 20px 50px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:12px;align-items:stretch}
+  .painel h2{margin:0;font-size:34px;color:var(--acento)}
+  .painel .linha{display:flex;justify-content:space-between;font-size:20px;font-weight:600}
+  .painel .linha b{font-variant-numeric:tabular-nums}
+  .painel .novo{color:#2fb36b;font-weight:700;font-size:20px}
+  .bt{pointer-events:auto;border:0;border-radius:18px;padding:14px 18px;font-size:22px;font-weight:700;cursor:pointer;background:var(--acento);color:#fff;box-shadow:0 5px 0 #b84f00}
+  .bt.sec{background:#efeaf9;color:var(--tinta);box-shadow:0 5px 0 var(--sombra)}
+  .bt.ter{background:transparent;color:var(--tinta);box-shadow:none;font-size:17px;padding:6px}
+  .bt small{display:block;font-size:13px;font-weight:600;opacity:.85}
+  .bt:active{transform:translateY(3px)}
+  #fim{background:rgba(13,10,30,.35)}
+  #pausa{background:rgba(13,10,30,.55)}
+  #fps{position:fixed;right:8px;bottom:8px;font:12px/1.3 ui-monospace,monospace;background:rgba(0,0,0,.55);padding:4px 8px;border-radius:6px;white-space:pre}
+  #fps[hidden]{display:none}
+  #anuncio{position:fixed;inset:0;background:#111;display:grid;place-items:center;font-size:22px;z-index:9}
+  #anuncio[hidden]{display:none}
+  .lab{position:fixed;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));z-index:5;color:#fff;font-weight:600;font-size:14px;text-decoration:none;background:rgba(0,0,0,.35);padding:7px 12px;border-radius:999px}
+  .lab[hidden]{display:none}
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<canvas id="tela"></canvas>
+<div id="estrela"></div>
+<div id="clarao"></div>
+<div id="flutuantes"></div>
+<div id="hud" hidden>
+  <div class="topo">
+    <div class="esq">
+      <div class="pilula"><span id="pontos">0</span></div>
+      <div class="mult" id="mult">x1</div>
+    </div>
+    <div class="dir">
+      <div class="pilula moedas"><i class="moeda"></i><span id="moedas">0</span></div>
+      <button id="bSom" class="redondo" aria-label="Som">🔊</button>
+      <button id="bPausa" class="redondo" aria-label="Pausa">❚❚</button>
+    </div>
+  </div>
+  <div id="perigo"><i id="perigoIcone">🐓</i><div class="barra"><b id="perigoBarra"></b></div></div>
+  <div id="poderes"></div>
+  <div id="dica"></div>
+</div>
+<div id="inicio" class="tela">
+  <div>
+    <h1>Run Run<br><span>Sahur</span></h1>
+  </div>
+  <div class="baixo">
+    <div class="rotulo" data-t="escolhaMapa">Escolha o mapa</div>
+    <div class="mapas">
+      <button class="mapa" id="mapaVila" data-mapa="vila"><span>🌙 <span data-t-mapa="vila">Vila do Sahur</span></span><small data-t-sub="vila"></small><span class="rec">🏆 <span id="recVila">0</span></span></button>
+      <button class="mapa" id="mapaRio" data-mapa="rio"><span>🌊 <span data-t-mapa="rio">Rio de toras</span></span><small data-t-sub="rio"></small><span class="rec">🏆 <span id="recRio">0</span></span></button>
+    </div>
+    <div class="toque" data-t="toque">Toque para correr</div>
+    <div class="teclas" data-t="teclas">← → desvia · ↑ pula · ↓ rola · toque ou espaço: TUNG!</div>
+  </div>
+</div>
+<div id="fim" class="tela" hidden>
+  <div class="painel">
+    <h2 id="motivo">Pego!</h2>
+    <div id="motivoSub" style="margin-top:-8px;color:#6b6380"></div>
+    <div class="linha"><span data-t="pontos">Pontos</span><b id="fimPontos">0</b></div>
+    <div class="linha"><span data-t="moedas">Moedas</span><b id="fimMoedas">0</b></div>
+    <div class="linha"><span data-t="recorde">Recorde</span><b id="fimRecorde">0</b></div>
+    <div class="novo" id="fimNovo" data-t="novoRecorde" hidden>Novo recorde!</div>
+    <button class="bt" id="bContinuar">▶ <span data-t="continuar">Continuar</span><small data-t="continuarSub">assista a um vídeo</small></button>
+    <button class="bt sec" id="bDeNovo" data-t="jogarDeNovo">Correr de novo</button>
+    <button class="bt ter" id="bMapa" data-t="trocarMapa">Trocar de mapa</button>
+  </div>
+</div>
+<div id="pausa" class="tela" hidden>
+  <div class="painel">
+    <h2 data-t="pausa">Pausa</h2>
+    <button class="bt" id="bVoltar" data-t="voltar">Voltar</button>
+  </div>
+</div>
+<div id="anuncio" hidden data-t="anuncio">Intervalo</div>
+<a id="bLab" class="lab" href="modelos/laboratorio.html" hidden>← Lab</a>
+<div id="fps" hidden></div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

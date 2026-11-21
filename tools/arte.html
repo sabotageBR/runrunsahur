@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arte · Run Run Sahur</title>
+<style>
+  @font-face{font-family:"Fredoka";font-weight:700;src:url("../src/ui/fontes/fredoka-latin-700-normal.woff2") format("woff2")}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0d0f26}
+  canvas{position:fixed;inset:0;width:100%;height:100%}
+  h1{position:fixed;margin:0;font:700 0/0.88 "Fredoka",sans-serif;color:#fff;-webkit-text-stroke:0.045em #5a2a00;text-shadow:0 0.07em 0 #5a2a00,0 0.12em 0.3em rgba(0,0,0,.45);transform:rotate(-4deg);text-align:center}
+  h1 span{color:#ffd23a}
+  .thumb h1{left:0;right:0;bottom:5%;font-size:15vmin}
+  .capa h1{right:6%;top:26%;font-size:17vmin}
+</style>
+<script type="importmap">
+{ "imports": { "three": "../vendor/three/three.module.js", "three/addons/": "../vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<canvas id="tela"></canvas>
+<h1>Run Run<br><span>Sahur</span></h1>
+<script type="module">
+  // Arte do portal (thumb quadrada e capa 16:9) feita com o proprio jogo: a vila a noite, o Sahur
+  // de frente com o taco e o titulo. Uso: tools/arte.html?tipo=thumb|capa&cenario=vila|rio&estrela
+  import * as THREE from 'three';
+  import { criarMotor } from '../src/render/motor.js';
+  import { criarPersonagem } from '../src/render/personagem.js';
+  import { criarMundo } from '../src/render/mundo.js';
+  import { criarVila } from '../src/render/cenarios/vila.js';
+  import { criarRio } from '../src/render/cenarios/rio.js';
+  import { criarRng } from '../src/jogo/rng.js';
+  import { criarPartida } from '../src/jogo/regras.js';
+
+  const q = new URLSearchParams(location.search);
+  const tipo = q.get('tipo') === 'capa' ? 'capa' : 'thumb';
+  document.body.className = tipo;
+  const motor = criarMotor(document.getElementById('tela'), { qualidade: 'alta', fixa: true });
+  const ctx = { materiais: motor.materiais, texturas: motor.texturas, rnd: criarRng(20261118).proximo };
+  const cenario = q.get('cenario') === 'rio' ? criarRio(ctx) : criarVila(ctx);
+  const mundo = criarMundo(motor, cenario);
+  motor.cena.add(mundo.raiz);
+  motor.cena.fog = mundo.nevoa;
+  const heroi = criarPersonagem(motor.texturas);
+  motor.cena.add(heroi.raiz, heroi.blob);
+  const P = criarPartida({ semente: 4, cenario: cenario.nome });
+  P.pista.ents = P.pista.ents.filter((e) => e.z > 60);
+  P.perseguidor.dist = 99;
+  const estrela = q.has('estrela') ? 6 : 0;
+  // pose: tacada no meio do golpe, de frente para a camera
+  for (let i = 0; i < 40; i++) {
+    mundo.atualizar(P, 1 / 60, { modo: 'idle', dz: 0, pego: false });
+    heroi.atualizar(1 / 60, { modo: 'idle', v: 0, noChao: true, tacada: tipo === 'capa' ? 0.12 : -1, altura: 0, chao: 0, sahur: estrela });
+  }
+  heroi.blob.position.y = 0.02;
+  cenario.aplicarLuz(motor, 0.08);
+  const cam = motor.camera;
+  // o Sahur olha para -z; a camera fica em -z olhando para ele (tela: direita = -x)
+  if (tipo === 'thumb') {
+    heroi.raiz.rotation.y = 0.12;
+    cam.fov = 40;
+    cam.position.set(-0.65, 1.7, -4.7);
+    cam.lookAt(0, 0.82, 0);
+  } else {
+    heroi.raiz.rotation.y = 0.22;
+    cam.fov = 40;
+    cam.position.set(-0.9, 1.4, -4.4);
+    cam.lookAt(-1.9, 1.15, 0);
+  }
+  cam.updateProjectionMatrix();
+  motor.ajustarTela();
+  cenario.atualizar(0, { camera: cam, d: 0, t: 0, ents: P.pista.ents, x: 0, y: 0 });
+  let n = 0;
+  (function quadro() {
+    motor.renderizar();
+    if (++n < 30) requestAnimationFrame(quadro);
+    else window.__arte = { pronto: true };
+  })();
+</script>
+</body>
+</html>

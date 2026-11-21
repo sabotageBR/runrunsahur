@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratório · Run Run Sahur</title>
+<link rel="preload" href="../src/ui/fontes/fredoka-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face{font-family:"Fredoka";font-weight:700;src:url("../src/ui/fontes/fredoka-latin-700-normal.woff2") format("woff2")}
+  @font-face{font-family:"Fredoka";font-weight:600;src:url("../src/ui/fontes/fredoka-latin-600-normal.woff2") format("woff2")}
+  :root{--tinta:#221c30;--suave:#6b6380;--fundo:#f5f1ea;--cartao:#fff;--marca:#ff7a1a;--roxo:#3a2d7a;--borda:#e6dfd2}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--tinta);background:var(--fundo)}
+  h1,h2,h3{font-family:"Fredoka",system-ui,sans-serif;margin:0}
+  header{padding:28px 20px 20px;background:linear-gradient(135deg,#0b1030 0%,#2a2f6a 45%,#c76682 80%,#ffbf7a 100%);color:#fff}
+  header h1{font-size:34px}
+  header p{margin:6px 0 0;max-width:860px;opacity:.95}
+  header a{color:#ffd23a}
+  main{max-width:1280px;margin:0 auto;padding:18px 16px 90px}
+  section{margin:26px 0}
+  section>h2{font-size:23px;margin-bottom:4px}
+  .sub{color:var(--suave);margin:0 0 12px}
+  .grade{display:grid;grid-template-columns:250px repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}
+  .cab{font-family:"Fredoka",sans-serif;font-weight:700;font-size:18px;align-self:end;padding:0 4px}
+  .cab small{display:block;font:13px/1.35 system-ui,sans-serif;color:var(--suave);font-weight:400}
+  .modelo{background:var(--cartao);border-radius:18px;padding:14px;box-shadow:0 2px 10px rgba(30,10,60,.08)}
+  .modelo h3{font-size:20px}
+  .modelo p{margin:4px 0 8px;font-size:13.5px;color:var(--suave)}
+  .chips{display:flex;flex-wrap:wrap;gap:4px}
+  .chip{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:#f1ebe0}
+  .celula{background:var(--cartao);border-radius:18px;padding:8px;box-shadow:0 2px 10px rgba(30,10,60,.08);display:flex;flex-direction:column;gap:8px;border:3px solid transparent}
+  .celula.escolhida{border-color:var(--marca)}
+  .fotos{display:grid;grid-template-columns:1fr 92px;gap:6px}
+  .fotos img,.vazio{width:100%;border-radius:10px;cursor:zoom-in;background:#e9e3d8;display:block;object-fit:cover}
+  .fotos img.p{aspect-ratio:16/9;height:100%}
+  .fotos img.r{aspect-ratio:390/844}
+  .vazio{display:grid;place-items:center;color:var(--suave);font-size:13px;aspect-ratio:16/9;cursor:default}
+  .botoes{display:flex;gap:6px;flex-wrap:wrap}
+  .botoes a,.botoes button{flex:1;min-width:80px;text-align:center;font:600 13.5px system-ui,sans-serif;padding:9px 6px;border-radius:10px;border:0;cursor:pointer;text-decoration:none;color:#fff;background:var(--tinta)}
+  .botoes .jogar{background:var(--marca)}
+  .botoes .escolher{background:#f1ebe0;color:var(--tinta)}
+  .celula.escolhida .escolher{background:var(--marca);color:#fff}
+  .vitrine{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:center;background:var(--cartao);border-radius:18px;padding:12px;box-shadow:0 2px 10px rgba(30,10,60,.08)}
+  .vitrine img{width:100%;border-radius:12px;display:block;background:#2a2346;aspect-ratio:16/9;object-fit:cover}
+  .vitrine .bt{display:inline-block;margin-top:10px;background:var(--roxo);color:#fff;padding:10px 16px;border-radius:12px;text-decoration:none;font-weight:600}
+  .tabela{width:100%;border-collapse:collapse;background:var(--cartao);border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(30,10,60,.08)}
+  .tabela th,.tabela td{padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--borda);font-size:14px}
+  .tabela th{background:#f1ebe0;font-family:"Fredoka",sans-serif;font-size:15px}
+  .reco{background:var(--cartao);border-left:6px solid var(--marca);border-radius:14px;padding:14px 18px;box-shadow:0 2px 10px rgba(30,10,60,.08)}
+  .reco h3{font-size:20px;margin-bottom:6px}
+  .reco ul{margin:6px 0 0;padding-left:20px}
+  .comum{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .comum div{background:var(--cartao);border-radius:14px;padding:10px 12px;box-shadow:0 2px 8px rgba(30,10,60,.06);font-size:14px}
+  .comum b{font-family:"Fredoka",sans-serif;font-size:16px;display:block}
+  #decisao{position:fixed;left:0;right:0;bottom:0;background:var(--tinta);color:#fff;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:5}
+  #decisao input{flex:1;min-width:200px;font:inherit;padding:8px 10px;border-radius:8px;border:0}
+  #decisao button{font:600 14px system-ui;padding:9px 14px;border-radius:10px;border:0;background:var(--marca);color:#fff;cursor:pointer}
+  #caixa{position:fixed;inset:0;background:rgba(14,10,30,.88);display:none;place-items:center;z-index:10;padding:20px}
+  #caixa.aberta{display:grid}
+  #caixa .fotos2{display:flex;gap:12px;align-items:center;justify-content:center;max-width:100%;max-height:100%}
+  #caixa img{max-height:86vh;max-width:56vw;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+  #caixa img.retrato{max-width:20vw}
+  @media (max-width:900px){.grade{grid-template-columns:1fr}.cab{display:none}.vitrine{grid-template-columns:1fr}#caixa .fotos2{flex-direction:column}#caixa img,#caixa img.retrato{max-width:92vw;max-height:40vh}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Run Run Sahur · Laboratório</h1>
+  <p><b>Decidido em 2026-11-18: P1 + os dois mapas</b> (ver <code>docs/decisao.md</code>). O jogo de <code>src/</code> agora só tem o P1, então os links desta página abrem o P1 nas duas colunas. A página fica como registro da Fase 1, com os prints da época.</p>
+  <p>Fase 1: quatro modelos jogáveis, <b>2 cenários × 2 versões do Tung Tung</b>, todos no estilo 3D de brinquedo. Clique em <b>Jogar</b> para correr de verdade (teclado ou toque) ou em <b>Autopiloto</b> para ver o jogo sozinho. Escolha uma célula e grave a decisão na barra de baixo. Nada daqui entra no build: o laboratório só abre o jogo de <code>src/</code> com parâmetros.</p>
+  <p style="margin-top:8px"><a href="vitrine.html">→ Vitrine do personagem (P1 e P2 lado a lado, com as animações)</a></p>
+</header>
+<main>
+  <section>
+    <h2>Os modelos</h2>
+    <p class="sub">Linhas: cenário. Colunas: proporção do personagem. Clique numa imagem para ver paisagem, celular em pé e a tela de início.</p>
+    <div class="grade" id="grade"></div>
+  </section>
+
+  <section>
+    <h2>Vitrine do personagem</h2>
+    <div class="vitrine">
+      <img src="prints/vitrine.png" alt="P1 e P2 na vitrine" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'vazio',textContent:'print ainda não gerado'}))">
+      <div>
+        <h3>Tung Tung Sahur modelado em código</h3>
+        <p class="sub" style="margin-top:6px">Tronco com veios e nós procedurais, topo cortado com anéis, olhos arregalados, sobrancelhas grossas e o taco de beisebol. Nenhum arquivo de imagem nem modelo externo: tudo sai do three.js.</p>
+        <p class="sub">Animações por código: correr, pular (estica e amassa), <b>rolar como um tronco</b>, tacada com rastro, tropeço, caído e o batuque "tung tung tung" parado.</p>
+        <a class="bt" href="vitrine.html">Abrir a vitrine</a>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>O que vale para todos</h2>
+    <div class="comum">
+      <div><b>3 faixas</b>Deslize ou use as setas: ← → troca de faixa, ↑ pula, ↓ rola (no ar, desce rápido).</div>
+      <div><b>Tacada "TUNG!"</b>Toque curto ou espaço. Quebra caixotes e barris na sua frente. É o diferencial em relação ao gênero.</div>
+      <div><b>Rolar como tronco</b>Para passar por baixo, ele deita e rola, e as pernas e os braços somem.</div>
+      <div><b>Plataformas altas</b>Barracas (vila) ou balsas de toras (rio) com rampa, no papel que os trens têm no Subway.</div>
+      <div><b>Perseguidor</b>Bater de lado aproxima o perseguidor; um segundo tropeço em até 6 s e ele te pega. Bater de frente encerra a corrida.</div>
+      <div><b>Poderes</b>🧲 Ímã (10 s) e 🥁 Modo Sahur (8 s, invencível, quebra tudo).</div>
+      <div><b>Amanhecer</b>O céu clareia com a distância. Na vila, você precisa acordar todo mundo antes do sol.</div>
+      <div><b>Passagem garantida</b>A pista é gerada por semente, e o teste roda o autopiloto por milhares de metros para provar que sempre há caminho.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Comparação</h2>
+    <table class="tabela">
+      <thead><tr><th>Modelo</th><th>A favor</th><th>Contra</th></tr></thead>
+      <tbody>
+        <tr><td><b>Vila do Sahur</b><br>noite → amanhecer</td><td>Tem a ver com o meme: "sahur" é a refeição antes do amanhecer no Ramadã, e o "tung tung tung" é o chamado para acordar. As lanternas acesas dão um clima forte e um bom thumbnail noturno. O amanhecer como progressão tem sentido.</td><td>Cena noturna pede cuidado com o contraste no celular. A rua lembra mais o gênero (cidade), mesmo sem trem. Tem menos tipos de obstáculo (não tem vão).</td></tr>
+        <tr><td><b>Rio de toras</b><br>manhã → dia</td><td>O trocadilho visual é forte: um tronco correndo sobre troncos. Os vãos de água trazem uma mecânica a mais (pular o canal). É claro e colorido (o que mais se lê no celular) e não se parece com o Subway em nada.</td><td>Ligação menor com o "sahur" (o tema vira só o personagem). A água e as toras instanciadas custam um pouco mais de GPU. O perseguidor (castor) é menos icônico que o galo.</td></tr>
+        <tr><td><b>P1 · Fiel ao meme</b></td><td>Silhueta reconhecível na hora: tronco alto, pernas e braços finos, o taco. É o que quem conhece o meme espera ver.</td><td>De costas, no celular em pé, vira um "palito" estreito. Os membros finos somem na tela pequena.</td></tr>
+        <tr><td><b>P2 · Chibi de jogo</b></td><td>Lê melhor de costas e no retrato, é mais fofo e expressivo, e os olhos maiores funcionam bem no ícone e no thumb.</td><td>Fica menos parecido com o meme original. Pode parecer "mais um mascote".</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="reco">
+    <h3>Recomendação</h3>
+    <p style="margin:0"><b>Vila do Sahur + P1</b> como base, e o <b>Rio de toras como segundo mundo</b> (o amanhecer leva da vila até o rio).</p>
+    <ul>
+      <li>A vila é o que dá sentido ao nome: correr pela vila às 3h fazendo "tung tung tung" antes do sol nascer.</li>
+      <li>O P1 é o personagem que as pessoas procuram. A leitura de costas melhora engrossando um pouco os membros e o taco, sem virar chibi.</li>
+      <li>O rio aproveita o trabalho já feito, traz o vão de água como mecânica nova e dá variedade visual (dia × noite) no meio da corrida.</li>
+    </ul>
+  </section>
+</main>
+
+<div id="decisao">
+  <span id="escolhaTxt">Nada escolhido ainda.</span>
+  <input id="nota" placeholder="Nota (opcional): o que mudar, o que juntar…">
+  <button id="bGravar">Gravar escolha</button>
+  <span id="gravado"></span>
+</div>
+<div id="caixa"><div class="fotos2"></div></div>
+
+<script type="module">
+  const CENARIOS = [
+    { id: 'vila', nome: 'Vila do Sahur', desc: 'Ruas de uma vila indonésia às 3h da manhã: casas de palafita, lanternas, bandeirinhas e ketupat. O céu clareia com a distância.', chips: ['🌙 noite → amanhecer', '🛒 carrinhos', '🛺 becak na contramão', '🐓 galo gigante'] },
+    { id: 'rio', nome: 'Rio de toras', desc: 'Toras amarradas boiando num rio até a serraria. Vãos de água, troncos atravessados, serras girando e balsas de toras.', chips: ['☀️ manhã', '💧 vãos de água', '🪚 serras', '🦫 castor gigante'] },
+  ];
+  const PERSONAGENS = [
+    { id: 'p1', nome: 'P1 · Fiel ao meme', desc: 'tronco alto, membros finos' },
+    { id: 'p2', nome: 'P2 · Chibi de jogo', desc: 'mais baixo e largo, olhos maiores' },
+  ];
+
+  let escolha = null;
+  try { escolha = JSON.parse(localStorage.getItem('rrs:lab.escolha') || 'null'); } catch { escolha = null; }
+  const grade = document.getElementById('grade');
+  let html = '<div></div>' + PERSONAGENS.map((p) => `<div class="cab">${p.nome}<small>${p.desc}</small></div>`).join('');
+  for (const c of CENARIOS) {
+    html += `<div class="modelo"><h3>${c.nome}</h3><p>${c.desc}</p><div class="chips">${c.chips.map((x) => `<span class="chip">${x}</span>`).join('')}</div></div>`;
+    for (const p of PERSONAGENS) {
+      const id = `${c.id}-${p.id}`;
+      const url = `../index.html?cenario=${c.id}&personagem=${p.id}&lab&novo`;
+      html += `<div class="celula" id="${id}" data-c="${c.id}" data-p="${p.id}">
+        <div class="fotos">
+          <img class="p" src="prints/${id}-paisagem.png" alt="${id} paisagem" data-id="${id}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'vazio',textContent:'rode npm run prints'}))">
+          <img class="r" src="prints/${id}-retrato.png" alt="${id} retrato" data-id="${id}" loading="lazy" onerror="this.style.visibility='hidden'">
+        </div>
+        <div class="botoes">
+          <a class="jogar" href="${url}">Jogar</a>
+          <a href="${url}&auto">Autopiloto</a>
+          <button class="escolher" data-c="${c.id}" data-p="${p.id}">Escolher</button>
+        </div></div>`;
+    }
+  }
+  grade.innerHTML = html;
+
+  const nomeC = (id) => CENARIOS.find((c) => c.id === id).nome;
+  const nomeP = (id) => PERSONAGENS.find((p) => p.id === id).nome;
+  function marcar() {
+    document.querySelectorAll('.celula').forEach((c) => c.classList.toggle('escolhida', !!escolha && c.dataset.c === escolha.cenario && c.dataset.p === escolha.personagem));
+    document.getElementById('escolhaTxt').innerHTML = escolha ? `Escolhido: <b>${nomeC(escolha.cenario)}</b> + <b>${nomeP(escolha.personagem)}</b>` : 'Nada escolhido ainda.';
+  }
+  grade.addEventListener('click', (ev) => {
+    const b = ev.target.closest('.escolher');
+    if (b) {
+      escolha = { cenario: b.dataset.c, personagem: b.dataset.p };
+      try { localStorage.setItem('rrs:lab.escolha', JSON.stringify(escolha)); } catch { /* ignora */ }
+      marcar();
+      return;
+    }
+    const img = ev.target.closest('img[data-id]');
+    if (img) abrir(img.dataset.id);
+  });
+  marcar();
+
+  document.getElementById('bGravar').onclick = async () => {
+    const out = document.getElementById('gravado');
+    if (!escolha) { out.textContent = 'escolha uma célula primeiro'; return; }
+    try {
+      const r = await fetch('/__decisao', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...escolha, nota: document.getElementById('nota').value }) });
+      const j = await r.json();
+      out.textContent = j.ok ? '✔ gravado em docs/decisao.md' : `erro: ${j.erro}`;
+    } catch { out.textContent = 'abra pelo npm run servir para gravar'; }
+  };
+
+  const caixa = document.getElementById('caixa');
+  function abrir(id) {
+    caixa.querySelector('.fotos2').innerHTML = `<img src="prints/${id}-paisagem.png"><img class="retrato" src="prints/${id}-retrato.png"><img class="retrato" src="prints/${id}-inicio.png">`;
+    caixa.classList.add('aberta');
+  }
+  caixa.onclick = () => caixa.classList.remove('aberta');
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') caixa.classList.remove('aberta'); });
+</script>
+</body>
+</html>

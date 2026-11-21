@@ -1,0 +1,25 @@
+{
+  "name": "runrunsahur",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Endless runner 3D com o Tung Tung Sahur para o californiagames.io (HTML + JavaScript puro, three.js vendorizado).",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "servir": "node tools/servir.mjs",
+    "vendor": "node tools/vendor.mjs",
+    "prints": "node tools/prints.mjs",
+    "californiagames": "node --test test/*.test.js && node tools/empacotar.mjs",
+    "y8": "node --test test/*.test.js && node tools/empacotar.mjs --alvo=y8",
+    "provar:y8": "node tools/provar-y8.mjs"
+  },
+  "portais": {
+    "y8": {
+      "appId": "6b00dfabd3fca2df3838993f",
+      "gameId": "294579"
+    }
+  },
+  "devDependencies": {
+    "three": "0.187.0"
+  }
+}

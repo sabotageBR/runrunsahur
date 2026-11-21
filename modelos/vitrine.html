@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vitrine · Run Run Sahur</title>
+<style>
+  @font-face{font-family:"Fredoka";font-weight:700;src:url("../src/ui/fontes/fredoka-latin-700-normal.woff2") format("woff2")}
+  @font-face{font-family:"Fredoka";font-weight:600;src:url("../src/ui/fontes/fredoka-latin-600-normal.woff2") format("woff2")}
+  html,body{margin:0;height:100%;background:#1d1830;color:#fff;font:15px/1.4 system-ui,sans-serif;overflow:hidden}
+  canvas{display:block;width:100%;height:100%}
+  .barra{position:fixed;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:12px 12px max(12px, env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(10,6,25,.75))}
+  .barra button{font:600 15px "Fredoka",system-ui;padding:9px 14px;border-radius:999px;border:0;background:#fff;color:#2a2140;cursor:pointer;box-shadow:0 3px 0 #b9a9e0}
+  .barra button.ativo{background:#ff7a1a;color:#fff;box-shadow:0 3px 0 #b84f00}
+  .titulo{position:fixed;top:12px;left:0;right:0;display:flex;justify-content:space-around;font:700 20px "Fredoka",system-ui;text-shadow:0 2px 0 rgba(0,0,0,.35);pointer-events:none}
+  a.voltar{position:fixed;top:12px;left:12px;color:#fff;font:600 14px "Fredoka",system-ui;text-decoration:none;background:rgba(255,255,255,.15);padding:6px 12px;border-radius:999px}
+</style>
+<script type="importmap">
+{ "imports": { "three": "../vendor/three/three.module.js", "three/addons/": "../vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<canvas id="tela"></canvas>
+<div class="titulo"><span>Tung Tung Sahur</span></div>
+<a class="voltar" href="laboratorio.html">← laboratório</a>
+<div class="barra" id="barra">
+  <button data-modo="vitrine" class="ativo">Parado</button>
+  <button data-modo="idle">Tung tung tung</button>
+  <button data-modo="correr">Correr</button>
+  <button data-acao="pulo">Pular</button>
+  <button data-acao="rolar">Rolar</button>
+  <button data-acao="tacada">Tacada</button>
+  <button data-acao="tropeco">Tropeço</button>
+  <button data-modo="caido">Caído</button>
+  <button data-acao="trombada">Trombada</button>
+  <button data-acao="escalou">Escalar</button>
+  <button data-acao="cortar">Serra</button>
+  <button data-acao="estrela" id="bEstrela">Estrela</button>
+  <button data-acao="girar" id="bGirar">Girar ⟳</button>
+</div>
+<script type="module">
+  import * as THREE from 'three';
+  import { criarMotor } from '../src/render/motor.js';
+  import { criarPersonagem } from '../src/render/personagem.js';
+  import { Modelo } from '../src/render/modelo.js';
+
+  const params = new URLSearchParams(location.search);
+  const motor = criarMotor(document.getElementById('tela'), { qualidade: params.get('qualidade') || 'alta', fixa: true });
+  const { cena, camera, materiais, texturas } = motor;
+  cena.background = new THREE.Color('#2a2346');
+  cena.fog = new THREE.Fog('#2a2346', 14, 40);
+  motor.hemi.color.set('#d9d4ff');
+  motor.hemi.groundColor.set('#4a3a5a');
+  motor.hemi.intensity = 0.9;
+  motor.sol.intensity = 2.4;
+  motor.dirSol.set(5, 9, 7);
+  cena.environmentIntensity = 0.9;
+  const preenchimento = new THREE.DirectionalLight('#ffb37a', 1.1);
+  preenchimento.position.set(-6, 3, -5);
+  cena.add(preenchimento);
+
+  // palco: disco de madeira
+  const b = new Modelo();
+  b.cilindro(1.05, 1.12, 0.16, '#c98d55', { p: [0, -0.08, 0], m: 'madeira' }, 40);
+  b.cilindro(1.13, 1.13, 0.04, '#7a4a2a', { p: [0, -0.15, 0], m: 'madeira' }, 40);
+  b.cilindro(40, 40, 0.1, '#2f2850', { p: [0, -0.22, 0] }, 48);
+  const palco = b.montar(materiais);
+  cena.add(palco);
+
+  const bonecos = [0].map(() => {
+    const p = criarPersonagem(texturas);
+    const suporte = new THREE.Group();
+    suporte.add(p.raiz);
+    p.blob.position.y = 0.005;
+    suporte.add(p.blob);
+    cena.add(suporte);
+    return { p, suporte, y: 0, vy: 0, rolando: 0, tacada: -1 };
+  });
+  let estrela = params.has('estrela') ? 8 : 0;
+  if (params.has('cortar')) setTimeout(() => { for (const k of bonecos) k.p.disparar('cortar'); modo = 'cortado'; }, 300);
+  if (params.has('trombada')) setInterval(() => { for (const k of bonecos) k.p.disparar('trombada', true); }, 1500);
+
+  let modo = params.get('modo') || 'vitrine';
+  let girar = !params.has('parado');
+  let angulo = Math.PI + Number(params.get('angulo') || 0); // de frente para a camera
+  const barra = document.getElementById('barra');
+  barra.addEventListener('click', (ev) => {
+    const bt = ev.target.closest('button');
+    if (!bt) return;
+    if (bt.dataset.modo) {
+      modo = bt.dataset.modo;
+      barra.querySelectorAll('[data-modo]').forEach((x) => x.classList.toggle('ativo', x === bt));
+      for (const k of bonecos) k.p.disparar('reiniciar');
+    }
+    const a = bt.dataset.acao;
+    if (a === 'girar') {
+      girar = !girar;
+      bt.classList.toggle('ativo', girar);
+      return;
+    }
+    for (const k of bonecos) {
+      if (a === 'pulo' && k.y === 0) { k.vy = 10; k.p.disparar('pulo'); }
+      if (a === 'rolar') k.rolando = 0.62;
+      if (a === 'tacada') k.tacada = 0;
+      if (a === 'tacadaLenta') k.tacada = 0.0001;
+      if (a === 'tropeco') k.p.disparar('tropeco');
+      if (a === 'trombada') k.p.disparar('trombada', true);
+      if (a === 'escalou') k.p.disparar('escalou');
+      if (a === 'cortar') { k.p.disparar('reiniciar'); k.p.disparar('cortar'); modo = 'cortado'; }
+      if (a === 'estrela') estrela = estrela > 0 ? 0 : 8;
+    }
+  });
+  document.getElementById('bGirar').classList.toggle('ativo', girar);
+
+  // camera orbitando de leve
+  function posicionarCamera() {
+    const retrato = camera.aspect < 0.8;
+    if (params.has('jogo')) {
+      // angulo da camera do jogo (de costas, de cima)
+      camera.fov = 58;
+      camera.position.set(0, 3.2, 5.6);
+      camera.lookAt(0, 1.1, -2);
+      camera.updateProjectionMatrix();
+      return;
+    }
+    camera.fov = retrato ? 62 : 40;
+    camera.position.set(0, retrato ? 2.0 : 1.7, retrato ? 7.0 : 4.6);
+    camera.lookAt(0, 1.0, 0);
+    camera.updateProjectionMatrix();
+  }
+  addEventListener('resize', posicionarCamera);
+  posicionarCamera();
+  motor.seguirLuz(new THREE.Vector3(0, 0, 10));
+
+  // para prints: ?tacada=0.12 congela a tacada nesse instante; ?rolar congela rolando
+  const congelaTacada = params.has('tacada') ? Number(params.get('tacada')) : -1;
+  const congelaRolar = params.has('rolar');
+  const lento = Number(params.get('lento') || 1);
+  let ultimo = performance.now();
+  function quadro(agora) {
+    const dt = Math.max(0, Math.min(0.05, (agora - ultimo) / 1000));
+    ultimo = agora;
+    if (girar) angulo += dt * 0.6;
+    for (const k of bonecos) {
+      if (k.vy !== 0 || k.y > 0) {
+        k.vy -= 32 * dt;
+        k.y += k.vy * dt;
+        if (k.y <= 0) { k.y = 0; k.vy = 0; k.p.disparar('pousou'); }
+      }
+      if (k.rolando > 0) k.rolando -= dt;
+      if (k.tacada >= 0) { k.tacada += dt * lento; if (k.tacada > 0.34) k.tacada = -1; }
+      if (congelaTacada >= 0) k.tacada = congelaTacada;
+      if (congelaRolar) k.rolando = 0.3;
+      k.suporte.rotation.y = angulo;
+      k.p.raiz.position.y = k.y;
+      k.p.atualizar(dt, { modo, v: 11, noChao: k.y === 0, vy: k.vy, rolando: k.rolando > 0, tacada: k.tacada, altura: k.y, chao: 0, sahur: estrela });
+    }
+    motor.renderizar();
+    requestAnimationFrame(quadro);
+  }
+  requestAnimationFrame(quadro);
+  window.__vitrine = { pronto: true, motor, bonecos };
+</script>
+</body>
+</html>
